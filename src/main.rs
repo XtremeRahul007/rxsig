@@ -1,57 +1,33 @@
-use std::{
-    env,
-    fs::File,
-    io::{self, BufReader, Read},
-    path::Path,
+use std::{env, time::Instant};
+
+mod cli;
+mod detector;
+mod reader;
+mod signatures;
+
+use crate::{
+    cli::command_line_handler,
+    detector::{detect_signature, option_handle},
+    reader::{file_path_handler, read_header},
 };
 
-const SIGNATURES: [(&str, &[u8]); 3] = [
-    ("PNG", &[0x89, 0x50, 0x4E, 0x47]),
-    ("JPEG", &[0xFF, 0xD8, 0xFF]),
-    ("PDF", &[0x25, 0x50, 0x44, 0x46]),
-];
-
-fn main() -> io::Result<()> {
-    let byte_array: [u8; 16] = read_header()?;
-
-    println!("{:?}", &byte_array);
-
-    let option: Option<&str> = detect_signature(&byte_array);
-
-    match option {
-        Some(name) => println!("This file is: {}", name),
-        None => println!("File doesn't exist in record"),
-    }
-    Ok(())
+fn main() {
+    let start = Instant::now();
+    run();
+    let duration = start.elapsed();
+    println!("Execution Time: {:?}", duration);
 }
 
-fn detect_signature(byte_array: &[u8; 16]) -> Option<&str> {
-    for (name, signature) in SIGNATURES {
-        if byte_array.starts_with(signature) {
-            return Some(name);
-        }
-    }
-    None
+fn run() {
+    let args: Vec<String> = env::args().collect::<Vec<String>>();
+
+    command_line_handler(&args);
+
+    let file = file_path_handler(&args);
+
+    let buffer: [u8; 16] = read_header(file);
+
+    detect_signature(&buffer);
+
+    option_handle(&buffer);
 }
-
-fn read_header() -> io::Result<[u8; 16]> {
-    let array: Vec<String> = env::args().collect::<Vec<String>>();
-
-    let path: &Path = Path::new(&array[1]);
-
-    let file: File = File::open(path)?;
-
-    let f: BufReader<File> = BufReader::new(file);
-
-    let mut byte_array: [u8; 16] = [0u8; 16];
-
-    let mut index: usize = 0;
-
-    for byte in f.bytes().take(16) {
-        byte_array[index] = byte?;
-        index += 1;
-    }
-
-    Ok(byte_array)
-}
-
