@@ -32,7 +32,6 @@ EXIT STATUS:
 
 pub fn command_line_handler(args: &[String]) {
     validate_argument_count(args);
-
     handle_help_argument(args);
 }
 
@@ -47,8 +46,8 @@ fn validate_argument_count(args: &[String]) {
     }
 }
 
-fn handle_help_argument(array: &[String]) {
-    match array.get(1).map(|s: &String| s.as_str()) {
+fn handle_help_argument(args: &[String]) {
+    match args.get(1).map(|s: &String| s.as_str()) {
         Some("--help") | Some("-h") => {
             println!("{}", HELP_TEXT);
             process::exit(0);

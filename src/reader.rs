@@ -1,6 +1,6 @@
 use std::{
     fs::File,
-    io::{BufReader, Read},
+    io::{Read, Seek, SeekFrom},
     path::Path,
     process,
 };
@@ -23,17 +23,39 @@ pub fn file_path_handler(args: &[String]) -> File {
     }
 }
 
-pub fn read_header(file: File) -> [u8; 16] {
-    let mut reader: BufReader<File> = BufReader::new(file);
+pub fn read_header(file: &mut File) -> [u8; 576] {
+    let mut buffer: [u8; 576] = [0u8; 576];
 
-    let mut buffer: [u8; 16] = [0u8; 16];
+    match file.read_exact(&mut buffer) {
+        Ok(_) => {
+            println!("Header: {:?}", buffer);
+            buffer
+        }
+        Err(error) => {
+            println!("{}", error);
+            process::exit(1);
+        }
+    }
+}
 
-    match reader.read_exact(&mut buffer) {
+pub fn read_footer(file: &mut File) -> [u8; 16] {
+    match file.seek(SeekFrom::End(-16)) {
         Ok(_) => {}
         Err(error) => {
             println!("{}", error);
             process::exit(1);
         }
     }
-    buffer
+    let mut buffer: [u8; 16] = [0u8; 16];
+
+    match file.read_exact(&mut buffer) {
+        Ok(_) => {
+            println!("Footer: {:?}", buffer);
+            buffer
+        }
+        Err(error) => {
+            println!("{}", error);
+            process::exit(1);
+        }
+    }
 }

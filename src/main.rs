@@ -7,8 +7,8 @@ mod signatures;
 
 use crate::{
     cli::command_line_handler,
-    detector::{detect_signature, option_handle},
-    reader::{file_path_handler, read_header},
+    detector::option_handle,
+    reader::{file_path_handler, read_footer, read_header},
 };
 
 fn main() {
@@ -23,11 +23,11 @@ fn run() {
 
     command_line_handler(&args);
 
-    let file = file_path_handler(&args);
+    let mut file = file_path_handler(&args);
 
-    let buffer: [u8; 16] = read_header(file);
+    let header_buffer: [u8; 576] = read_header(&mut file);
 
-    detect_signature(&buffer);
+    let footer_buffer: [u8; 16] = read_footer(&mut file);
 
-    option_handle(&buffer);
+    option_handle(&header_buffer, footer_buffer);
 }

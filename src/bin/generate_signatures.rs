@@ -23,7 +23,7 @@ struct Entry {
 const ENTRY: Entry = Entry {
     import_file_name: "./file_sigs.json",
     import_file_path: "../../data",
-    export_file_name: "sig.rs",
+    export_file_name: "signatures.rs",
     export_file_path: "../.././generated-data",
     export_folder: "../.././generated-data",
 };
