@@ -1,4 +1,4 @@
-use std::process;
+use crate::error::AppError;
 
 const HELP_TEXT: &str = "rxsig - Detect file types using magic numbers.
 
@@ -30,34 +30,32 @@ EXIT STATUS:
     1    Error
 ";
 
-pub fn command_line_handler(args: &[String]) {
-    validate_argument_count(args);
-    handle_help_argument(args);
+pub fn command_line_handler(args: &[String]) -> Result<(), AppError> {
+    validate_argument_count(args)?;
+    handle_help_argument(args)?;
+    Ok(())
 }
 
-fn validate_argument_count(args: &[String]) {
+fn validate_argument_count(args: &[String]) -> Result<(), AppError> {
     let args_length: usize = args.len();
     if args_length > 2 {
-        println!(
+        return Err(AppError::new(format!(
             "Error: Too many arguments. Expected 1, received {}.\nUsage: rxsig <arg1>\nFor more information, try 'rxsig --help' or 'rxsig -h'",
-            args_length - 1
-        );
-        process::exit(1);
+            args_length
+        )));
     }
+    Ok(())
 }
 
-fn handle_help_argument(args: &[String]) {
+fn handle_help_argument(args: &[String]) -> Result<(), AppError> {
     match args.get(1).map(|s: &String| s.as_str()) {
         Some("--help") | Some("-h") => {
             println!("{}", HELP_TEXT);
-            process::exit(0);
+            Ok(())
         }
-        None => {
-            println!(
-                "Error: Missing required argument.\nUsage: rxsig <arg1>\nFor more information, try 'rxsig --help' or 'rxsig -h'"
-            );
-            process::exit(1);
-        }
-        Some(_) => {}
+        None => Err(AppError::new(
+            "Error: Missing required argument.\nUsage: rxsig <arg1>\nFor more information, try 'rxsig --help' or 'rxsig -h'",
+        )),
+        Some(_) => Ok(()),
     }
 }

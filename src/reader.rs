@@ -2,60 +2,41 @@ use std::{
     fs::File,
     io::{Read, Seek, SeekFrom},
     path::Path,
-    process,
 };
 
-pub fn file_path_handler(args: &[String]) -> File {
-    let path: &Path = Path::new(&args[1]);
+use crate::error::AppError;
 
-    let file = File::open(path);
+pub fn file_path_handler(args: &[String]) -> Result<File, AppError> {
+    let path_str = args.get(1).ok_or_else(|| {
+        AppError::new("Error: No file path provided.\nUsage: rxsig <FILE>\nFor more information, try 'rxsig --help' or 'rxsig -h'")
+    })?;
 
-    match file {
-        Ok(file) => file,
+    let path = Path::new(path_str);
 
-        Err(error) => {
-            println!(
-                "Error: Failed to open file.\nReason: {}.\nUsage: rxsig <FILE>\nFor more information, try 'rxsig --help' or 'rxsig -h'",
-                error
-            );
-            process::exit(1);
-        }
-    }
+    let file = File::open(path).map_err(|err| {
+        AppError::new(format!(
+            "Error: Failed to open file.\nReason: {err}.\nUsage: rxsig <FILE>\nFor more information, try 'rxsig --help' or 'rxsig -h'"
+        ))
+    })?;
+
+    Ok(file)
 }
 
-pub fn read_header(file: &mut File) -> [u8; 576] {
-    let mut buffer: [u8; 576] = [0u8; 576];
+pub fn read_header(file: &mut File) -> Result<Vec<u8>, AppError> {
+    let mut buffer: Vec<u8> = vec![0u8; 32768];
 
-    match file.read_exact(&mut buffer) {
-        Ok(_) => {
-            println!("Header: {:?}", buffer);
-            buffer
-        }
-        Err(error) => {
-            println!("{}", error);
-            process::exit(1);
-        }
-    }
+    file.read(&mut buffer)?;
+
+    /*println!("Header: {:?}", buffer);*/
+    Ok(buffer)
 }
 
-pub fn read_footer(file: &mut File) -> [u8; 16] {
-    match file.seek(SeekFrom::End(-16)) {
-        Ok(_) => {}
-        Err(error) => {
-            println!("{}", error);
-            process::exit(1);
-        }
-    }
-    let mut buffer: [u8; 16] = [0u8; 16];
+pub fn read_footer(file: &mut File) -> Result<Vec<u8>, AppError> {
+    file.seek(SeekFrom::End(-64))?;
+    let mut buffer: Vec<u8> = vec![0u8; 64];
 
-    match file.read_exact(&mut buffer) {
-        Ok(_) => {
-            println!("Footer: {:?}", buffer);
-            buffer
-        }
-        Err(error) => {
-            println!("{}", error);
-            process::exit(1);
-        }
-    }
+    file.read(&mut buffer)?;
+
+    /*println!("Footer: {:?}", buffer);*/
+    Ok(buffer)
 }

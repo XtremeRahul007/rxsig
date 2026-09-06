@@ -1,7 +1,8 @@
-use std::{env, time::Instant};
+use std::{env, error::Error, time::Instant};
 
 mod cli;
 mod detector;
+mod error;
 mod reader;
 mod signatures;
 
@@ -13,21 +14,25 @@ use crate::{
 
 fn main() {
     let start = Instant::now();
-    run();
+    if let Err(e) = run() {
+        eprintln!("Error: {}", e);
+    }
     let duration = start.elapsed();
     println!("Execution Time: {:?}", duration);
 }
 
-fn run() {
+fn run() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect::<Vec<String>>();
 
-    command_line_handler(&args);
+    command_line_handler(&args)?;
 
-    let mut file = file_path_handler(&args);
+    let mut file = file_path_handler(&args)?;
 
-    let header_buffer: [u8; 576] = read_header(&mut file);
+    let header_buffer: Vec<u8> = read_header(&mut file)?;
 
-    let footer_buffer: [u8; 16] = read_footer(&mut file);
+    let footer_buffer: Vec<u8> = read_footer(&mut file)?;
 
-    option_handle(&header_buffer, footer_buffer);
+    option_handle(&header_buffer, &footer_buffer);
+
+    Ok(())
 }
