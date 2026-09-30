@@ -1,6 +1,9 @@
-use std::cmp::Reverse;
+use std::{cmp::Reverse, fs::File};
 
-use crate::signatures::{SIGNATURES, Signature};
+use crate::{
+    signatures::{SIGNATURES, Signature},
+    utils::{get_iso, get_size_str},
+};
 
 pub fn option_handle(header_buffer: &[u8], footer_buffer: &[u8]) {
     let matches = detect_signature(header_buffer, footer_buffer);
@@ -64,6 +67,37 @@ fn determine_matches(rank_list: Vec<(usize, &Signature)>) {
             );
         }
     }
+
+    if grouped_signatures.len() == 0 {
+        println!("No matches found.");
+    }
+}
+
+pub fn detect_metadata(file: File) -> Result<(), std::io::Error> {
+    let metadata = file.metadata()?;
+
+    let entity_type = if metadata.file_type().is_file() {
+        "File"
+    } else {
+        "Directory"
+    };
+
+    let read_only = metadata.permissions().readonly();
+
+    let created_at = get_iso(metadata.created()?).unwrap();
+
+    let updated_at = get_iso(metadata.modified()?).unwrap();
+
+    let accessed_at = get_iso(metadata.accessed()?).unwrap();
+
+    let size = get_size_str(&metadata.len());
+
+    println!(
+        "Type: {:?}\nRead Only: {}\nCreated at: {:?}\nUpdated at: {:?}\nAccessed at: {:?}\nSize: {:?}",
+        entity_type, read_only, created_at, updated_at, accessed_at, size
+    );
+
+    Ok(())
 }
 
 /*

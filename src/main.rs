@@ -5,10 +5,11 @@ mod detector;
 mod error;
 mod reader;
 mod signatures;
+mod utils;
 
 use crate::{
     cli::command_line_handler,
-    detector::option_handle,
+    detector::{detect_metadata, option_handle},
     reader::{file_path_handler, read_footer, read_header},
 };
 
@@ -33,6 +34,8 @@ fn run() -> Result<(), Box<dyn Error>> {
     let footer_buffer: Vec<u8> = read_footer(&mut file)?;
 
     option_handle(&header_buffer, &footer_buffer);
+
+    detect_metadata(file)?;
 
     Ok(())
 }
